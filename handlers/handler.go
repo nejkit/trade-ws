@@ -22,7 +22,10 @@ func NewEventHandler(storage IEventStorage) EventHandler {
 
 func (h *EventHandler) GetHandleEmmitBalanceEventFunc() rabbit.HandlerFunc[balances.BpsEmmitAssetResponse] {
 	return func(bear *balances.BpsEmmitAssetResponse) {
-		eventId := bear.AssetId
+		if bear.AccountId == "" {
+			return
+		}
+		eventId := bear.AccountId
 		eventType := "emmit"
 		err := h.eventStorage.SaveMessageInStorage(context.TODO(), eventId, eventType, bear)
 

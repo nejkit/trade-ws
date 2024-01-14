@@ -42,12 +42,8 @@ func (e *EventStorage) SaveMessageInStorage(ctx context.Context, id string, even
 func (e *EventStorage) GetEventsChan(ctx context.Context, id, eventType string) <-chan EventDto {
 	msgsChan := make(chan EventDto)
 	go func() {
-		timeout := time.After(time.Minute * 5)
 		for {
 			select {
-			case <-timeout:
-				close(msgsChan)
-				return
 			case <-ctx.Done():
 				close(msgsChan)
 				return

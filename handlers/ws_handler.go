@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"net/http"
-	"time"
 	"trade-ws/storage"
 
 	"github.com/gorilla/websocket"
@@ -11,8 +10,8 @@ import (
 )
 
 type EventRequest struct {
-	OperationId string `json:"operation_id,omitempty"`
-	EventType   string `json:"event_type,omitempty"`
+	AccountId  string   `json:"account_id,omitempty"`
+	EventTypes []string `json:"event_types,omitempty"`
 }
 
 var upgrader = websocket.Upgrader{
@@ -51,6 +50,7 @@ func (s *WebSocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reques
 		if err != nil {
 
 			if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
+				cancel()
 				return
 			}
 
@@ -63,39 +63,29 @@ func (s *WebSocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reques
 
 		doneChan := make(chan struct{})
 
-		go func() {
-			for {
-				_, _, err := conn.ReadMessage()
-				if err != nil {
-					if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
-						doneChan <- struct{}{}
+		for _, eType := range incomesEvent.EventTypes {
+			localEType := eType
+			go func() {
+				msgChan := s.eventStorage.GetEventsChan(ctxWithCancel, incomesEvent.AccountId, localEType)
+				for {
+					select {
+					case msg, ok := <-msgChan:
+						if !ok {
+							return
+						}
+
+						logger.Infoln("Msg data: ", msg.Data)
+
+						err = conn.WriteJSON(msg)
+						if err != nil {
+							logger.Errorln(err.Error())
+						}
+					case <-doneChan:
+						cancel()
 						return
 					}
-
 				}
-				time.Sleep(time.Millisecond * 100)
-			}
-		}()
-
-		respChan := s.eventStorage.GetEventsChan(ctxWithCancel, incomesEvent.OperationId, incomesEvent.EventType)
-
-		for {
-			select {
-			case msg, ok := <-respChan:
-				if !ok {
-					return
-				}
-
-				logger.Infoln("Msg data: ", msg.Data)
-
-				err = conn.WriteJSON(msg)
-				if err != nil {
-					logger.Errorln(err.Error())
-				}
-			case <-doneChan:
-				cancel()
-				return
-			}
+			}()
 		}
 
 	}
