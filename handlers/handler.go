@@ -2,7 +2,8 @@ package handlers
 
 import (
 	"context"
-	"trade-ws/external/balances"
+
+	"trade-ws/external/bps"
 	"trade-ws/rabbit"
 
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -20,8 +21,8 @@ func NewEventHandler(storage IEventStorage) EventHandler {
 	return EventHandler{eventStorage: storage}
 }
 
-func (h *EventHandler) GetHandleEmmitBalanceEventFunc() rabbit.HandlerFunc[balances.BpsEmmitAssetResponse] {
-	return func(bear *balances.BpsEmmitAssetResponse) {
+func (h *EventHandler) GetHandleEmmitBalanceEventFunc() rabbit.HandlerFunc[bps.BpsEmmitAssetResponse] {
+	return func(bear *bps.BpsEmmitAssetResponse) {
 		if bear.AccountId == "" {
 			return
 		}

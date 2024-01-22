@@ -11,7 +11,8 @@ import (
 	"time"
 	"trade-ws/config"
 	"trade-ws/constants"
-	"trade-ws/external/balances"
+	"trade-ws/external/bps"
+
 	"trade-ws/handlers"
 	"trade-ws/rabbit"
 	"trade-ws/storage"
@@ -53,8 +54,8 @@ func main() {
 		return
 	}
 
-	emmitAssetProcessor := rabbit.NewProcessor[balances.BpsEmmitAssetResponse](handler.GetHandleEmmitBalanceEventFunc(), rabbit.GetParserForEmmitBalanceResponse())
-	emmitAssetListener, err := rabbit.NewListener[balances.BpsEmmitAssetResponse](ctxWithCancel, emmitAssetChannel, emmitAssetProcessor, constants.EmmitAssetResponseQueue)
+	emmitAssetProcessor := rabbit.NewProcessor[bps.BpsEmmitAssetResponse](handler.GetHandleEmmitBalanceEventFunc(), rabbit.GetParserForEmmitBalanceResponse())
+	emmitAssetListener, err := rabbit.NewListener[bps.BpsEmmitAssetResponse](ctxWithCancel, emmitAssetChannel, emmitAssetProcessor, constants.EmmitAssetResponseQueue)
 
 	if err != nil {
 		return
